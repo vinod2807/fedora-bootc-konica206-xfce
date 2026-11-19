@@ -73,8 +73,8 @@ jobs:
             type=sha,format=long,prefix=sha-
             type=ref,event=branch
           labels: |
-            org.opencontainers.image.title=Fedora bootc - Cinnamon + Konica bizhub 206
-            org.opencontainers.image.description=Fedora bootc (base follows :latest) linux/amd64 with full Cinnamon desktop (Wayland + X11, Slick Greeter autologin) and the Konica Minolta bizhub 206 printer application
+            org.opencontainers.image.title=Fedora bootc - XFCE + Konica bizhub 206
+            org.opencontainers.image.description=Fedora bootc (base follows :latest) linux/amd64 with full XFCE desktop (X11, LightDM GTK greeter autologin) and the Konica Minolta bizhub 206 printer application
             org.vinod2807.konica.app-ref=${{ steps.refs.outputs.app }}
             org.vinod2807.konica.native-ref=${{ steps.refs.outputs.native }}
             org.vinod2807.konica.retrofit-ref=${{ steps.refs.outputs.retrofit }}
@@ -120,13 +120,13 @@ jobs:
         run: |
           set -euo pipefail
           docker run --rm --entrypoint /bin/bash localhost/fedora-bootc-konica206:smoke -euo pipefail -x -c '
-            rpm -q cinnamon cinnamon-session lightdm slick-greeter xdg-desktop-portal-gtk NetworkManager pappl cups ghostscript zram-generator mesa-vulkan-drivers vulkan-loader >/dev/null
+            rpm -q xfce4-session lightdm lightdm-gtk xdg-desktop-portal-gtk NetworkManager pappl cups ghostscript zram-generator mesa-vulkan-drivers vulkan-loader >/dev/null
             test -f /usr/share/xdg-desktop-portal/portals/gtk.portal
-            # GNOME 51 desktop must be gone.
-            for p in gdm gnome-shell gnome-tweaks gnome-shell-extension-common; do
+            # GNOME/Cinnamon desktops must be gone.
+            for p in gdm gnome-shell cinnamon cinnamon-session slick-greeter; do
               ! rpm -q "$p" >/dev/null 2>&1
             done
-            # Unwanted cinnamon-desktop group apps are not shipped.
+            # Unwanted apps are not shipped.
             for p in firefox thunderbird pidgin shotwell zoitechat; do
               ! rpm -q "$p" >/dev/null 2>&1
             done
@@ -145,18 +145,18 @@ jobs:
             grep -qx "Terminal=false" /usr/share/applications/weechat.desktop
             desktop-file-validate /usr/share/applications/weechat.desktop
             test -f /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
-            for b in /usr/bin/konica206-native /usr/bin/konica-native /usr/bin/konica-send /usr/bin/cinnamon; do
+            for b in /usr/bin/konica206-native /usr/bin/konica-native /usr/bin/konica-send /usr/bin/startxfce4; do
               test -x "$b"
             done
             /usr/bin/konica206-native --version
             /usr/bin/konica-native --help >/dev/null 2>&1 || true
-            test -f /usr/share/wayland-sessions/cinnamon-wayland.desktop
-            test -f /etc/lightdm/lightdm.conf.d/50-cinnamon-autologin.conf
-            grep -qx "autologin-user=vinod" /etc/lightdm/lightdm.conf.d/50-cinnamon-autologin.conf
-            grep -qx "autologin-session=cinnamon-wayland" /etc/lightdm/lightdm.conf.d/50-cinnamon-autologin.conf
+            test -f /usr/share/xsessions/xfce.desktop
+            test -f /etc/lightdm/lightdm.conf.d/50-xfce-autologin.conf
+            grep -qx "autologin-user=vinod" /etc/lightdm/lightdm.conf.d/50-xfce-autologin.conf
+            grep -qx "autologin-session=xfce" /etc/lightdm/lightdm.conf.d/50-xfce-autologin.conf
             grep -qE "^session[[:space:]]+required[[:space:]]+pam_selinux\.so open nottys$" /usr/lib/pam.d/lightdm-autologin
-            test -f /usr/lib/tmpfiles.d/50-cinnamon-lightdm.conf
-            grep -qx "d /var/lib/lightdm 0700 lightdm lightdm -" /usr/lib/tmpfiles.d/50-cinnamon-lightdm.conf
+            test -f /usr/lib/tmpfiles.d/50-xfce-lightdm.conf
+            grep -qx "d /var/lib/lightdm 0700 lightdm lightdm -" /usr/lib/tmpfiles.d/50-xfce-lightdm.conf
             test -f /usr/lib/bootc/kargs.d/90-linux-pc-crash-fixes.toml
             grep -q "intel_idle.max_cstate=1" /usr/lib/bootc/kargs.d/90-linux-pc-crash-fixes.toml
             # GRUB menu must pause so an older deployment can be selected.

@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 #
 # Fedora bootc image with:
-#   - Full Cinnamon desktop (Wayland + X11) with Slick Greeter/LightDM autologin
+#   - Full XFCE desktop (X11) with LightDM GTK greeter autologin
 #   - fuzzel-printjobs desktop helper (CUPS job cancel/restart)
 #   - Konica Minolta bizhub 206 PAPPL printer application
 #   - konica-native (C11) device-stream encoder
@@ -227,18 +227,16 @@ ARG KONICA_RETROFIT_REF=main
 # below), so this no longer needs bumping to refresh a baked-in RPM.
 ARG BUILD_EPOCH=local
 
-LABEL org.opencontainers.image.title="Fedora bootc - Cinnamon + Konica bizhub 206" \
-      org.opencontainers.image.description="Fedora bootc (base follows :latest), Linux/amd64, full Cinnamon desktop (Wayland + X11, Slick Greeter autologin), PAPPL printer application with the konica-native C11 encoder" \
-      org.opencontainers.image.source="https://github.com/vinod2807/fedora-bootc-konica206" \
+LABEL org.opencontainers.image.title="Fedora bootc - XFCE + Konica bizhub 206" \
+      org.opencontainers.image.description="Fedora bootc (base follows :latest), Linux/amd64, full XFCE desktop (X11, LightDM GTK greeter autologin), PAPPL printer application with the konica-native C11 encoder" \
+      org.opencontainers.image.source="https://github.com/vinod2807/fedora-bootc-konica206-xfce" \
       org.opencontainers.image.licenses="NOASSERTION" \
       org.vinod2807.konica.app-ref="${KONICA_APP_REF}" \
       org.vinod2807.konica.native-ref="${KONICA_NATIVE_REF}" \
       org.vinod2807.konica.retrofit-ref="${KONICA_RETROFIT_REF}"
 
 # Weekly builds update the base packages as well as the two printer sources.
-# Firefox, Thunderbird, Pidgin, Shotwell and Zoitechat are mandatory packages
-# of the cinnamon-desktop group, but are not wanted in this image (browsers are
-# Flatpaks), so they are removed again below.
+# Browsers and mail/chat apps are installed as Flatpaks, not RPMs.
 RUN set -eux; \
     dnf -y upgrade --refresh; \
     dnf install -y --setopt=install_weak_deps=False \
@@ -269,8 +267,7 @@ RUN set -eux; \
         xorg-x11-server-Xwayland \
         zram-generator \
         weechat \
-    && dnf group install -y --setopt=install_weak_deps=False cinnamon-desktop \
-    && dnf -y remove --no-autoremove firefox thunderbird pidgin shotwell zoitechat \
+    && dnf group install -y --setopt=install_weak_deps=False xfce-desktop \
     && dnf install -y --setopt=install_weak_deps=False \
         lightdm \
         gnome-keyring \
@@ -395,18 +392,18 @@ RUN set -eux; \
         /usr/share/ppd/konica206/konica206-classic.ppd \
         /usr/share/ppd/konica206/konica206-app.ppd; \
     update-desktop-database /usr/share/applications; \
-    # LightDM autologin to Cinnamon's Wayland session for vinod. Slick Greeter
-    # comes from the cinnamon-desktop group; the drop-in wins over the packaged
+    # LightDM autologin to the XFCE (X11) session for vinod. lightdm-gtk-greeter
+    # comes from the xfce-desktop group; the drop-in wins over the packaged
     # /etc/lightdm/lightdm.conf.
     install -d -m 0755 /etc/lightdm/lightdm.conf.d; \
     printf '%s\n' \
         '[Seat:*]' \
-        'greeter-session=slick-greeter' \
+        'greeter-session=lightdm-gtk-greeter' \
         'autologin-user=vinod' \
-        'autologin-session=cinnamon-wayland' \
-        'user-session=cinnamon-wayland' \
-        > /etc/lightdm/lightdm.conf.d/50-cinnamon-autologin.conf; \
-    chmod 0644 /etc/lightdm/lightdm.conf.d/50-cinnamon-autologin.conf; \
+        'autologin-session=xfce' \
+        'user-session=xfce' \
+        > /etc/lightdm/lightdm.conf.d/50-xfce-autologin.conf; \
+    chmod 0644 /etc/lightdm/lightdm.conf.d/50-xfce-autologin.conf; \
     # LightDM sets PAM_TTY=/dev/tty/7 (not a device path), so pam_selinux's
     # tty lookup fails with ENOTDIR. Without a user context the autologin
     # session runs as xdm_t and Xsession's ssh-agent cannot create its socket
@@ -417,9 +414,9 @@ RUN set -eux; \
     grep -qE '^session[[:space:]]+required[[:space:]]+pam_selinux\.so open nottys$' \
         /usr/lib/pam.d/lightdm-autologin; \
     # bootc images carry no SELinux xattrs, so /var/cache can end up labelled
-    # var_t and slick-greeter's missing home (/var/lib/lightdm) makes it exit
-    # 25 with "chdir: No such file or directory". Create the dirs at boot and
-    # relabel them before the display manager starts.
+    # var_t and the greeter's missing home (/var/lib/lightdm) makes it fail with
+    # "chdir: No such file or directory". Create the dirs at boot and relabel
+    # them before the display manager starts.
     install -d -m 0755 /usr/lib/tmpfiles.d; \
     printf '%s\n' \
         '# LightDM runtime directories (bootc images have no SELinux xattrs)' \
@@ -430,14 +427,22 @@ RUN set -eux; \
         'd /var/lib/lightdm-data 0755 lightdm lightdm -' \
         'Z /var/lib/lightdm' \
         'Z /var/lib/lightdm-data' \
-        > /usr/lib/tmpfiles.d/50-cinnamon-lightdm.conf; \
-    chmod 0644 /usr/lib/tmpfiles.d/50-cinnamon-lightdm.conf; \
-    # System-wide dark theme defaults: Cinnamon (Mint-Y-Dark) + GTK4/libadwaita.
+        > /usr/lib/tmpfiles.d/50-xfce-lightdm.conf; \
+    chmod 0644 /usr/lib/tmpfiles.d/50-xfce-lightdm.conf; \
+    # System-wide dark theme defaults: XFCE (Greybird-dark) + GTK4/libadwaita.
+    install -d -m 0755 /etc/xdg/xfce4/xfconf/xfce-perchannel-xml; \
+    printf '%s\n' \
+        '<?xml version="1.0" encoding="UTF-8"?>' \
+        '<channel name="xsettings" version="1.0">' \
+        '  <property name="Net" type="empty">' \
+        '    <property name="ThemeName" type="string" value="Greybird-dark"/>' \
+        '    <property name="IconThemeName" type="string" value="Adwaita"/>' \
+        '  </property>' \
+        '</channel>' \
+        > /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml; \
+    chmod 0644 /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml; \
     install -d -m 0755 /etc/dconf/db/local.d /etc/dconf/db/local.d/locks; \
     printf '%s\n' \
-        '[org/cinnamon/desktop/interface]' \
-        "gtk-theme='Mint-Y-Dark'" \
-        '' \
         '[org/gnome/desktop/interface]' \
         "color-scheme='prefer-dark'" \
         > /etc/dconf/db/local.d/00-dark-theme; \
@@ -445,12 +450,12 @@ RUN set -eux; \
         '/org/gnome/desktop/interface/color-scheme' \
         > /etc/dconf/db/local.d/locks/00-dark-theme-lock; \
     chmod 0644 /etc/dconf/db/local.d/00-dark-theme /etc/dconf/db/local.d/locks/00-dark-theme-lock; \
-    # GTK theme defaults for non-Cinnamon GTK3 apps.
-    printf '%s\n' 'gtk-theme-name=Adwaita-dark' > /etc/gtk-3.0/settings.ini 2>/dev/null || true; \
+    # GTK theme defaults for non-XFCE GTK3 apps.
+    printf '%s\n' 'gtk-theme-name=Greybird-dark' > /etc/gtk-3.0/settings.ini 2>/dev/null || true; \
     install -d -m 0755 /etc/gtk-3.0; \
     printf '%s\n' \
         '[Settings]' \
-        'gtk-theme-name=Adwaita-dark' \
+        'gtk-theme-name=Greybird-dark' \
         'gtk-icon-theme-name=Adwaita' \
         > /etc/gtk-3.0/settings.ini; \
     chmod 0644 /etc/gtk-3.0/settings.ini; \
@@ -497,9 +502,9 @@ RUN set -eux; \
         -o /etc/flatpak/remotes.d/flathub.flatpakrepo \
         https://dl.flathub.org/repo/flathub.flatpakrepo
 
-# Graphical login by default via LightDM + Slick Greeter. Autologin into the
-# Cinnamon Wayland session for vinod is configured in
-# /etc/lightdm/lightdm.conf.d/50-cinnamon-autologin.conf.
+# Graphical login by default via LightDM + lightdm-gtk-greeter. Autologin into
+# the XFCE session for vinod is configured in
+# /etc/lightdm/lightdm.conf.d/50-xfce-autologin.conf.
 # Updates: the base image enables bootc-fetch-apply-updates.timer, which runs
 # "bootc upgrade --apply" and REBOOTS into the new image. This machine must only
 # reboot when the user says so, so that timer is masked and the repository's own

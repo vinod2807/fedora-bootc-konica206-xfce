@@ -1,4 +1,4 @@
-# Fedora bootc — Cinnamon desktop + Konica Minolta bizhub 206
+# Fedora bootc — XFCE desktop + Konica Minolta bizhub 206
 
 A custom [Fedora bootc](https://bootc.dev/) image for an older x86_64 Intel PC
 (the target is an Intel Core i5 650). It provides:
@@ -7,9 +7,9 @@ A custom [Fedora bootc](https://bootc.dev/) image for an older x86_64 Intel PC
   `quay.io/fedora/fedora-bootc:latest`, so the image follows the current Fedora
   release and crosses major versions on its own (see
   [Fedora major version](#fedora-major-version-follows-latest))
-- **Full Cinnamon desktop (Wayland + X11)** with **LightDM/Slick Greeter
-  autologin** into the Wayland session for `vinod`, and a system-wide dark
-  theme (Cinnamon Mint-Y-Dark + Adwaita for GTK apps)
+- **Full XFCE desktop (X11)** with **LightDM GTK greeter autologin** into the
+  `xfce` session for `vinod`, and a system-wide dark theme (Greybird-dark for
+  XFCE/GTK3 + Adwaita for GTK4 apps)
 - **Flatpak** with the **Flathub** remote preconfigured, plus daily system and
   per-user `flatpak-update.timer`s. Browsers, office suites, media players,
   **ZapFast** (WhatsApp) and **NAPS2** are Flatpaks, not RPMs
@@ -42,7 +42,7 @@ A custom [Fedora bootc](https://bootc.dev/) image for an older x86_64 Intel PC
 Published image:
 
 ```
-ghcr.io/vinod2807/fedora-bootc-konica206:latest
+ghcr.io/vinod2807/fedora-bootc-konica206-xfce:latest
 ```
 
 The published image is post-processed with **chunkah** into 64 content-based
@@ -55,11 +55,10 @@ The installed machine tracks that reference and updates with `bootc upgrade`.
 
 ## Recent changes
 
-- **Full Cinnamon desktop:** replaced the GNOME 51 stack with the
-  `cinnamon-desktop` group (Cinnamon 6.8, whose Wayland session is no longer
-  experimental), LightDM + Slick Greeter autologin into `cinnamon-wayland` for
-  `vinod`, `gnome-keyring`/`libsecret` and a system-wide dark theme. GNOME
-  Shell, GDM and `gnome-tweaks` are no longer part of the image.
+- **Full XFCE desktop:** this variant uses the `xfce-desktop` group, LightDM +
+  `lightdm-gtk-greeter` autologin into the X11 `xfce` session for `vinod`,
+  `gnome-keyring`/`libsecret` and a system-wide Greybird-dark theme. GNOME
+  Shell, GDM and Cinnamon are not part of this image.
 - **Apps as Flatpaks:** ZapFast and NAPS2 are no longer installed as RPMs.
   NAPS2 is sideloaded from its official GitHub release by
   `scripts/install-naps2-flatpak`, which also restores the Epson and Konica
@@ -268,22 +267,22 @@ From GitHub:
 2. Wait for the job. The summary shows the GHCR tags and the exact printer
    source SHAs.
 3. Confirm the package is public (see [Repository settings](#repository-settings)).
-4. `docker pull ghcr.io/vinod2807/fedora-bootc-konica206:latest` (or
+4. `docker pull ghcr.io/vinod2807/fedora-bootc-konica206-xfce:latest` (or
    `podman pull ...`).
 
 From the CLI:
 
 ```bash
-gh workflow run weekly-image.yml --repo vinod2807/fedora-bootc-konica206
-gh run watch --repo vinod2807/fedora-bootc-konica206
+gh workflow run weekly-image.yml --repo vinod2807/fedora-bootc-konica206-xfce
+gh run watch --repo vinod2807/fedora-bootc-konica206-xfce
 ```
 
 Local build (Fedora host with podman):
 
 ```bash
-git clone https://github.com/vinod2807/fedora-bootc-konica206
-cd fedora-bootc-konica206
-podman build --pull=always --platform linux/amd64 -t localhost/fedora-bootc-konica206 .
+git clone https://github.com/vinod2807/fedora-bootc-konica206-xfce
+cd fedora-bootc-konica206-xfce
+podman build --pull=always --platform linux/amd64 -t localhost/fedora-bootc-konica206-xfce .
 ```
 
 `--pull=always` matters because the base is a moving tag (`:latest`); CI passes
@@ -343,7 +342,7 @@ updated daily by `flatpak-update.timer`; to move NAPS2 to a new release, re-run
 5. Anaconda installs the bootc image referenced by the ISO. Create your own
    user (admin/wheel) and **set the root password** in the installer. **No user
    or password is baked into the image.**
-6. Reboot. Slick Greeter appears and autologs into the Cinnamon Wayland
+6. Reboot. The LightDM GTK greeter appears and autologs into the XFCE
    session as `vinod` (the image configures autologin for that user, so create
    the account with that name in step 5).
 
@@ -366,9 +365,9 @@ internet (it pulls the image, roughly 3.3 GiB compressed, from GHCR).
    *Make this user administrator*, and set **both** the user password and the
    **root password**. Root is the fallback if the desktop does not start.
 5. **Install:** the payload is pulled by digest from
-   `ghcr.io/vinod2807/fedora-bootc-konica206`; the installed system tracks
+   `ghcr.io/vinod2807/fedora-bootc-konica206-xfce`; the installed system tracks
    `:latest` for `bootc upgrade`.
-6. **First boot:** Slick Greeter autologs straight into Cinnamon (Wayland) as
+6. **First boot:** the LightDM GTK greeter autologs straight into XFCE as
    `vinod`. Text
    fallback is `Ctrl+Alt+F2` with the same user (or `root` + the root password
    you set).
@@ -403,17 +402,16 @@ internet (it pulls the image, roughly 3.3 GiB compressed, from GHCR).
 
 ## First boot and login
 
-- **Graphical:** LightDM + Slick Greeter start on VT1 and autolog into the
-  `cinnamon-wayland` session as `vinod` (configured in
-  `/etc/lightdm/lightdm.conf.d/50-cinnamon-autologin.conf`). The Cinnamon
-  Mint-Y-Dark theme and Adwaita dark setting are applied through dconf. The
-  X11 `cinnamon` session stays available from the greeter's session menu.
-- **Shell:** the Cinnamon panel, menu and Overview provide the app grid,
-  window switching and the system menu (network, volume, power). `fuzzel`
-  remains available as a lightweight keyboard launcher (`fuzzel`, or
+- **Graphical:** LightDM + `lightdm-gtk-greeter` start on VT1 and autolog into
+  the X11 `xfce` session as `vinod` (configured in
+  `/etc/lightdm/lightdm.conf.d/50-xfce-autologin.conf`). The Greybird-dark
+  theme is applied via xfconf defaults.
+- **Shell:** the XFCE panel, applications menu and desktop provide the app
+  grid, window switching and the system menu (network, volume, power).
+  `fuzzel` remains available as a lightweight keyboard launcher (`fuzzel`, or
   `fuzzel dmenu` for stdin).
-- **Applications:** Nemo, Xed, Xreader, Archive Manager and the usual Cinnamon
-  utilities come from the `cinnamon-desktop` group. Custom launchers in
+- **Applications:** Thunar, Mousepad/Text Editor, Archive Manager and the usual
+  XFCE utilities come from the `xfce-desktop` group. Custom launchers in
   `desktop/applications/` add `konica-scan`, `fuzzel-printjobs`, `weechat` and
   `mpv`. Browsers, office suites, media players, ZapFast and NAPS2 are Flatpaks.
 - **Scanning:** `simple-scan` and **NAPS2** (Flatpak), both backed by
@@ -427,7 +425,7 @@ internet (it pulls the image, roughly 3.3 GiB compressed, from GHCR).
 - **GitHub CLI:** `gh` is installed (`gh auth login`, `gh repo clone …`,
   `gh workflow run …`).
 - **Text fallback:** `Ctrl+Alt+F2` gives a text login with the same user or
-  `root`; Cinnamon can be started manually from there with
+  `root`; XFCE can be started manually from there with
   `systemctl start lightdm`.
 - **Audio:** PipeWire, WirePlumber and `pipewire-pulseaudio` are enabled for
   users. Use `wpctl status` / `wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+`.
@@ -450,7 +448,7 @@ The installed system’s image reference is the `TARGET_IMAGE` baked into the
 installer:
 
 ```
-ghcr.io/vinod2807/fedora-bootc-konica206:latest
+ghcr.io/vinod2807/fedora-bootc-konica206-xfce:latest
 ```
 
 ### Manual update
@@ -473,7 +471,7 @@ incremental.
 To change the tracked image (for example to a frozen SHA tag):
 
 ```bash
-sudo bootc switch ghcr.io/vinod2807/fedora-bootc-konica206:sha-<commit>
+sudo bootc switch ghcr.io/vinod2807/fedora-bootc-konica206-xfce:sha-<commit>
 sudo systemctl reboot
 ```
 
@@ -1002,7 +1000,7 @@ machine. It is updated after workflow runs.
 
 | Check | Status |
 |---|---|
-| Containerfile builds `linux/amd64` | **Passed** — `weekly-image` run [41966537577](https://github.com/vinod2807/fedora-bootc-konica206/actions/runs/41966537577) |
+| Containerfile builds `linux/amd64` | **Passed** — `weekly-image` run [41966537577](https://github.com/vinod2807/fedora-bootc-konica206-xfce/actions/runs/41966537577) |
 | Upstream printer `make check` / `make check-native` | **Passed** — same run (builder stage) |
 | `konica-native` vendor-free test suite | **Passed** — same run (builder stage) |
 | Container smoke test (packages, units, binary versions, no vendor files, `/usr/local` symlink, `pdftoraster`) | **Passed** — same run, before the push |
@@ -1010,10 +1008,10 @@ machine. It is updated after workflow runs.
 | Rechunk preserves ownership, setuid and capabilities | **Passed** — build-time assertion (`/` = `0:0`, `sudo` setuid, `newuidmap` `cap_setuid=ep`) plus post-deploy verification |
 | `bootc upgrade` into the rechunked image on real hardware | **Passed** — staged `86434254…`, booted 2026-11-05; autologin and the desktop work |
 | Weekly push to GHCR + traceable tags | **Passed** — tags `latest`, `main`, `sha-eaa96f776aea3d8aff70ef723221ed9cf0eefda3`; `latest` resolves to `sha256:3fc26b60…`; anonymous pull works (public package) |
-| ISO El Torito BIOS metadata | **Passed** — `build-iso` run [40688027094](https://github.com/vinod2807/fedora-bootc-konica206/actions/runs/40688027094): `-b '/images/eltorito.img'`, `Boot record: El Torito, grub2-mbr, GPT` |
+| ISO El Torito BIOS metadata | **Passed** — `build-iso` run [40688027094](https://github.com/vinod2807/fedora-bootc-konica206-xfce/actions/runs/40688027094): `-b '/images/eltorito.img'`, `Boot record: El Torito, grub2-mbr, GPT` |
 | ISO boots under QEMU SeaBIOS to Linux userspace | **Passed** — same run; serial log reaches the Anaconda installer UI |
 | Full BIOS installation on real hardware | **Passed** — installed on the i5-650 desktop (BIOS boot, NTFS partition preserved) |
-| Graphical login (Slick Greeter autologin → Cinnamon Wayland) on real hardware | **Passed** — graphical session in daily use |
+| Graphical login (LightDM GTK greeter autologin → XFCE) on real hardware | **Not yet tested** — new XFCE variant |
 | Real USB printing on bizhub 206 | **Passed** — real A4 simplex job printed from the `konica206` queue (2026-10-28) |
 | Printer works with vendor assets installed | **Passed** — same job, licensed runtime data installed |
 | Duplex, A3 and other media sizes on real paper | **Not tested** — options are present and selectable, but only A4 simplex has been printed |
@@ -1035,7 +1033,7 @@ After the first push/build:
 3. **GHCR package visibility:** the first push is already anonymously
    pullable (verified with an anonymous registry token), which is what the ISO
    installer and the installed PC need. If it ever reverts to private:
-   Packages → `fedora-bootc-konica206` → Package settings → Change visibility →
+   Packages → `fedora-bootc-konica206-xfce` → Package settings → Change visibility →
    **Public**. Alternatively keep it private and configure registry
    authentication deliberately.
 4. **Package linking:** the first push links the package to this repository
@@ -1046,9 +1044,9 @@ After the first push/build:
 Useful CLI checks:
 
 ```bash
-gh workflow list --repo vinod2807/fedora-bootc-konica206
-gh run list --repo vinod2807/fedora-bootc-konica206
-gh run download <run-id> --repo vinod2807/fedora-bootc-konica206
+gh workflow list --repo vinod2807/fedora-bootc-konica206-xfce
+gh run list --repo vinod2807/fedora-bootc-konica206-xfce
+gh run download <run-id> --repo vinod2807/fedora-bootc-konica206-xfce
 ```
 
 To make the package public with a token that has package administration
@@ -1058,7 +1056,7 @@ required):
 
 ```bash
 gh api --method PATCH \
-  /user/packages/container/fedora-bootc-konica206 \
+  /user/packages/container/fedora-bootc-konica206-xfce \
   -f visibility=public
 ```
 
