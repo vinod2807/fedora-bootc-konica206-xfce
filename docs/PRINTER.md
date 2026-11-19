@@ -262,11 +262,20 @@ The upstream `vendor/NOTICE` says these remain Konica Minolta property and are
 not covered by the repository license. Redistributing them requires the
 vendor’s permission. Therefore:
 
-- this repository contains no vendor files;
+- this repository and its public CI build contain no vendor files;
 - the container build copies only compiled binaries from the builder stage, not
   `vendor/`;
 - public images and public ISO artifacts contain no vendor files;
-- you supply the files after installation from your own licensed driver copy.
+- a **local** build can opt in by placing your licensed files in the git-ignored
+  `vendor-data/` directory before `podman build` (the same layouts are accepted
+  below). The build bakes them into `/var/lib/konica206/vendor`, so they are
+  present as soon as the image is installed, and into
+  `/usr/share/konica206/vendor-data` as an immutable source the first-boot
+  oneshot restores from if `/var` is ever reset. A malformed `vendor-data/`
+  fails the build with a clear error instead of silently producing an image
+  that cannot print.
+
+On an installed machine you can still supply or replace the data at any time:
 
 ```bash
 sudo konica206-install-vendor-data /path/to/driver-copy

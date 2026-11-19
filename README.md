@@ -67,7 +67,8 @@ The installed machine tracks that reference and updates with `bootc upgrade`.
 - **Printers:** the Konica bizhub 206 PAPPL application, its native C11 encoder
   and legacy `konica206uri` proxy queues, plus the driverless Epson L3260
   network queue, are enabled and self-heal at boot. Licensed Konica runtime
-  data is installed after installation and never baked into the image.
+  data can be baked into a **local** image via the git-ignored `vendor-data/`
+  directory (so it is present from install); public builds never include it.
 - **Updates:** daily Flatpak update timers (system + user) and a stage-only
   bootc upgrade timer that never reboots on its own. Published images are
   rechunked with chunkah for smaller incremental downloads.
@@ -121,6 +122,7 @@ smbclient -L localhost -U vinod
 | `udev/70-konica206.rules` | USB permissions for `132b:232b` (group `lp`, `uaccess`) |
 | `desktop/applications/` | Custom launchers: `konica-scan`, `fuzzel-printjobs`, `weechat`, `mpv` |
 | `cups/`, `ppd/`, `samba/` | CUPS filter rule, hand-written Konica PPDs, and the Samba share config |
+| `vendor-data/` (git-ignored, local only) | Drop your licensed 245igdi files here before a local build; the image then carries them from install time |
 | `scripts/install-vendor-data` | Post-install installer for the licensed Konica runtime data |
 | `scripts/ensure-queue` | Creates the PAPPL queue and the local CUPS queue with the PPD shim |
 | `scripts/ensure-legacy-queue` | Creates the legacy `konica206uri` printer and its two CUPS proxy queues |
@@ -288,6 +290,33 @@ podman build --pull=always --platform linux/amd64 -t localhost/fedora-bootc-koni
 `--pull=always` matters because the base is a moving tag (`:latest`); CI passes
 `pull: true` for the same reason.
 
+#### Baking the licensed Konica runtime data into a local build
+
+Public builds publish no proprietary files. For a machine you build yourself,
+put your licensed 245igdi files in the git-ignored `vendor-data/` directory
+**before** building:
+
+```bash
+mkdir -p vendor-data/KonicaMinolta/245igdi/{Halftones,Profiles}
+cp /path/to/driver/COPA.DEFAULT.600x600.hft vendor-data/KonicaMinolta/245igdi/Halftones/
+cp /path/to/driver/sRGB.icm /path/to/driver/sGrayInv.icm \
+   vendor-data/KonicaMinolta/245igdi/Profiles/
+podman build --pull=always --platform linux/amd64 \
+  -t localhost/fedora-bootc-konica206-xfce .
+```
+
+`vendor-data/` also accepts a `245igdi/` subdirectory or `Halftones/` and
+`Profiles/` directly; extra `.icm` profiles and the 1200×600 screen are copied
+too. The build validates the three required files and **fails with an error**
+if the directory is present but incomplete. With the data baked in, a fresh
+install already has working Konica queues — no post-install
+`konica206-install-vendor-data` step is needed. The data is also copied to
+`/usr/share/konica206/vendor-data` inside the image, which
+`konica206-vendor-data.service` uses to restore `/var/lib/konica206/vendor`
+after a reset. `vendor-data/` is excluded by both `.gitignore` and the
+repository's licensing rules; never commit it or upload it as a public
+artifact.
+
 ### Third-party apps (Flatpak)
 
 Third-party desktop apps are installed as Flatpaks on the **installed machine**,
@@ -374,10 +403,11 @@ internet (it pulls the image, roughly 3.3 GiB compressed, from GHCR).
    If the user account is unexpectedly missing, log in as `root` on that text
    console and run `useradd -m -G wheel -s /bin/bash <name>` then
    `passwd <name>`.
-7. **Post-install:** verify the crash fixes (`cat /proc/cmdline`), then install
-   the licensed printer runtime data
-   (`sudo konica206-install-vendor-data <path>`) and run
-   `sudo konica206-preflight`.
+7. **Post-install:** verify the crash fixes (`cat /proc/cmdline`), then run
+   `sudo konica206-preflight`. If the ISO was built from an image that did not
+   bake in the licensed printer data, also run
+   `sudo konica206-install-vendor-data <path>`; a local build with
+   `vendor-data/` needs no post-install step.
 
 ### BIOS installation notes
 
@@ -434,7 +464,8 @@ internet (it pulls the image, roughly 3.3 GiB compressed, from GHCR).
   `wpa_supplicant`, both installed.
 - **Printer:** `konica206-native.service` is enabled and restarts on failure;
   `konica206-queue.service` creates the CUPS queue when the printer is
-  attached. Install the licensed runtime data with
+  attached. Images built locally with `vendor-data/` already include the
+  licensed runtime data; otherwise install it with
   `sudo konica206-install-vendor-data <path>`.
 
 No SSH server is installed by default. No default password, SSH key, or
@@ -733,11 +764,17 @@ a symlink into persistent writable state because `/usr` is immutable on bootc:
 
 The upstream `vendor/NOTICE` says these files remain Konica Minolta property
 and are **not** covered by the repository license; redistribution needs the
-vendor’s permission. Therefore this repository and the public image contain
+vendor’s permission. Therefore this repository and its **public** image contain
 **none of them**, and the image build never copies the upstream `vendor/`
 directory. The source clone exists only in the builder stage.
 
-Supply them after installation from your own licensed 245igdi driver copy:
+A **local** build can opt in by placing the licensed files in the git-ignored
+`vendor-data/` directory (see [Baking the licensed Konica runtime data into a
+local build](#baking-the-licensed-konica-runtime-data-into-a-local-build)). The
+build then installs them into `/var/lib/konica206/vendor` so they are present
+from install time, plus `/usr/share/konica206/vendor-data` as an immutable
+recovery source. Without that, supply them after installation from your own
+licensed 245igdi driver copy:
 
 ```bash
 sudo konica206-install-vendor-data /path/to/245igdi-or-archive
@@ -830,10 +867,11 @@ second legacy Konica queue against the same device.
 ### Licensing status
 
 - Code binaries: built from the upstream repositories at build time.
-- Vendor runtime data: **not** redistributed; post-install supply only.
+- Vendor runtime data: **not** redistributed by public CI. A local build may
+  bake licensed files in from the git-ignored `vendor-data/` directory; those
+  files stay on the builder's machine and are never committed or published.
 - Vendor PPD: **not** redistributed; not required.
-- No vendor files are committed, baked into the image, or uploaded as public
-  artifacts.
+- No vendor files are committed, and none are uploaded as public artifacts.
 - The image license metadata is `NOASSERTION`; review the upstream licenses
   before redistributing the image further.
 

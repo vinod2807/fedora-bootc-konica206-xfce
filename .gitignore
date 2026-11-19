@@ -10,7 +10,10 @@ artifacts/
 *.zip
 
 # Vendor-owned Konica Minolta runtime data: never commit.
+# For a local build, drop your licensed 245igdi files into vendor-data/ before
+# building; the Containerfile reads them into the image, but git never will.
 vendor/
+vendor-data/
 *.icm
 *.hft
 

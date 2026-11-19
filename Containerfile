@@ -12,8 +12,11 @@
 #     retrofit PPD through the open konica-native encoder
 #   - authenticated Samba folder and CUPS printer sharing
 #
-# Vendor-owned runtime data (halftone screen + ICC profiles) is deliberately
-# NOT copied into this image. See docs/PRINTER.md and scripts/install-vendor-data.
+# Vendor-owned runtime data (halftone screen + ICC profiles) is proprietary and
+# is never committed. A LOCAL build may opt in by placing the licensed files in
+# vendor-data/ before building; the image then carries them from install time.
+# Public CI has no vendor-data/ and publishes no proprietary files. See
+# README.md, docs/PRINTER.md and scripts/install-vendor-data.
 #
 # Build:
 #   podman build --platform linux/amd64 -t localhost/fedora-bootc-konica206 .
@@ -210,6 +213,47 @@ RUN set -eux; \
 # the overlay2 128-layer depth limit).
 COPY . /tmp/ctx
 RUN set -eux;     r=/out/final-root;     rm -rf "$r";     install -d "$r";     cp -a /out/retrofit-root/. "$r"/;     mkdir -p "$r"/usr;     cp -a /out/usr/. "$r"/usr/;     install -D -m 0644 /tmp/ctx/bootc/90-linux-pc-crash-fixes.toml "$r"/usr/lib/bootc/kargs.d/90-linux-pc-crash-fixes.toml;     install -D -m 0644 /tmp/ctx/modprobe.d/90-linux-pc-crash-fixes.conf "$r"/etc/modprobe.d/90-linux-pc-crash-fixes.conf;     install -D -m 0644 /tmp/ctx/modprobe.d/90-konica206-usblp.conf "$r"/etc/modprobe.d/90-konica206-usblp.conf;     install -D -m 0644 /tmp/ctx/systemd/konica206-native.service "$r"/usr/lib/systemd/system/konica206-native.service;     install -D -m 0644 /tmp/ctx/systemd/konica206-queue.service "$r"/usr/lib/systemd/system/konica206-queue.service;     install -D -m 0644 /tmp/ctx/systemd/epson-l3260-queue.service "$r"/usr/lib/systemd/system/epson-l3260-queue.service;     install -D -m 0644 /tmp/ctx/systemd/konica206-classic-queue.service "$r"/usr/lib/systemd/system/konica206-classic-queue.service;     install -D -m 0644 /tmp/ctx/systemd/samba-setup.service "$r"/usr/lib/systemd/system/samba-setup.service;     install -D -m 0644 /tmp/ctx/systemd/nmb.service.d/10-wait-for-interface.conf "$r"/usr/lib/systemd/system/nmb.service.d/10-wait-for-interface.conf;     install -D -m 0644 /tmp/ctx/systemd/bootc-upgrade.service "$r"/usr/lib/systemd/system/bootc-upgrade.service;     install -D -m 0644 /tmp/ctx/systemd/bootc-upgrade.timer "$r"/usr/lib/systemd/system/bootc-upgrade.timer;     install -D -m 0644 /tmp/ctx/systemd/flatpak-update.service "$r"/usr/lib/systemd/system/flatpak-update.service;     install -D -m 0644 /tmp/ctx/systemd/flatpak-update.timer "$r"/usr/lib/systemd/system/flatpak-update.timer;     install -D -m 0644 /tmp/ctx/systemd/user/flatpak-update.service "$r"/usr/lib/systemd/user/flatpak-update.service;     install -D -m 0644 /tmp/ctx/systemd/user/flatpak-update.timer "$r"/usr/lib/systemd/user/flatpak-update.timer;     install -D -m 0644 /tmp/ctx/systemd/zram-generator.conf "$r"/etc/systemd/zram-generator.conf;     install -D -m 0644 /tmp/ctx/systemd/zram-setup-no-fail-on-stop.conf "$r"/usr/lib/systemd/system/systemd-zram-setup@zram0.service.d/10-no-fail-on-stop.conf;     install -D -m 0644 /tmp/ctx/udev/70-konica206.rules "$r"/usr/lib/udev/rules.d/70-konica206.rules;     for f in /tmp/ctx/desktop/applications/*.desktop; do install -D -m 0644 "$f" "$r"/usr/share/applications/"$(basename "$f")"; done;     install -D -m 0755 /tmp/ctx/scripts/fuzzel-printjobs "$r"/usr/local/bin/fuzzel-printjobs;     install -D -m 0755 /tmp/ctx/scripts/konica-scan "$r"/usr/local/bin/konica-scan;     install -D -m 0755 /tmp/ctx/scripts/install-vendor-data "$r"/usr/libexec/konica206/install-vendor-data;     install -D -m 0755 /tmp/ctx/scripts/ensure-queue "$r"/usr/libexec/konica206/ensure-queue;     install -D -m 0755 /tmp/ctx/scripts/preflight "$r"/usr/libexec/konica206/preflight;     install -D -m 0755 /tmp/ctx/scripts/ensure-epson-queue "$r"/usr/libexec/epson-l3260/ensure-queue;     install -D -m 0755 /tmp/ctx/scripts/ensure-classic-queue "$r"/usr/libexec/konica206/ensure-classic-queue;     install -D -m 0755 /tmp/ctx/scripts/setup-samba "$r"/usr/libexec/setup-samba;     install -D -m 0644 /tmp/ctx/samba/smb.conf "$r"/etc/samba/smb.conf;     install -D -m 0644 /tmp/ctx/flatpak/overrides/com.stremio.Stremio "$r"/etc/flatpak/overrides/com.stremio.Stremio;     install -D -m 0644 /tmp/ctx/ppd/konica206.ppd "$r"/usr/share/ppd/konica206/konica206.ppd; install -D -m 0644 /tmp/ctx/ppd/konica206-classic.ppd "$r"/usr/share/ppd/konica206/konica206-classic.ppd; { cat /tmp/ctx/ppd/konica206.ppd; printf '\n*cupsFilter2: "application/pdf image/urf 5 /usr/libexec/konica206/pdf-duplex-shim"\n'; } > "$r"/usr/share/ppd/konica206/konica206-app.ppd; grep -qxF '*cupsFilter2: "application/pdf image/urf 5 /usr/libexec/konica206/pdf-duplex-shim"' "$r"/usr/share/ppd/konica206/konica206-app.ppd; install -D -m 0755 /tmp/ctx/scripts/pdf-duplex-shim "$r"/usr/libexec/konica206/pdf-duplex-shim; install -D -m 0755 /tmp/ctx/scripts/konica-vendor-data-boot "$r"/usr/libexec/konica206/install-vendor-data-onboot; install -D -m 0644 /tmp/ctx/systemd/konica206-vendor-data.service "$r"/usr/lib/systemd/system/konica206-vendor-data.service; install -D -m 0644 /tmp/ctx/systemd/konica206-vendor-data.conf "$r"/etc/konica206/vendor-data.conf; test -d "$r"/usr/share/konica206
+
+# Licensed Konica 245igdi runtime data is proprietary and is never committed to
+# this repository. A local build can opt in by dropping the licensed files into
+# vendor-data/ before building (git ignores it). Any layout accepted by
+# scripts/install-vendor-data works: KonicaMinolta/245igdi/, 245igdi/, or
+# Halftones/ + Profiles/ directly. Public CI has no vendor-data/, so this step
+# is a no-op and no proprietary file is ever published.
+#
+# Install the data twice on purpose:
+#   * /var/lib/konica206/vendor - present from the moment the image is installed
+#   * /usr/share/konica206/vendor-data - immutable source the boot oneshot can
+#     restore from if /var is ever wiped (fresh install, reset, etc.)
+RUN set -eux; \
+    r=/out/final-root; \
+    src=/tmp/ctx/vendor-data; \
+    if [ -d "$src" ]; then \
+        root=; \
+        for cand in "$src/KonicaMinolta/245igdi" "$src/245igdi" "$src"; do \
+            if [ -s "$cand/Halftones/COPA.DEFAULT.600x600.hft" ] \
+               && [ -s "$cand/Profiles/sRGB.icm" ] \
+               && [ -s "$cand/Profiles/sGrayInv.icm" ]; then \
+                root=$cand; \
+                break; \
+            fi; \
+        done; \
+        if [ -z "$root" ]; then \
+            echo "ERROR: vendor-data/ must contain Halftones/COPA.DEFAULT.600x600.hft, Profiles/sRGB.icm and Profiles/sGrayInv.icm" >&2; \
+            exit 1; \
+        fi; \
+        for dest in "$r/var/lib/konica206/vendor/KonicaMinolta/245igdi" \
+                    "$r/usr/share/konica206/vendor-data/KonicaMinolta/245igdi"; do \
+            install -d -m 0755 "$dest/Halftones" "$dest/Profiles"; \
+            install -m 0644 "$root"/Halftones/* "$dest/Halftones/"; \
+            install -m 0644 "$root"/Profiles/*.icm "$dest/Profiles/"; \
+            chmod -R a+rX "$dest"; \
+        done; \
+        chmod 0755 "$r/var/lib/konica206" "$r/var/lib/konica206/vendor"; \
+        echo "Baked licensed 245igdi runtime data into the image"; \
+    else \
+        echo "No local vendor-data/ directory; licensed data must be supplied at first boot"; \
+    fi
 
 # ---------------------------------------------------------------------------
 # Final bootc image.

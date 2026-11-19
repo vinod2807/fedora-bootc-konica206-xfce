@@ -11,3 +11,9 @@ artifacts
 vendor
 *.icm
 *.hft
+
+# vendor-data/ is the one deliberate exception: licensed 245igdi files supplied
+# by a local builder. It is git-ignored, so public CI has no such directory and
+# these rules never let proprietary files into a published image.
+!vendor-data
+!vendor-data/**

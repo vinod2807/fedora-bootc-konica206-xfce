@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # First-boot / post-upgrade install of the Konica Minolta 245igdi vendor runtime
-# data (halftone screen + ICC profiles). The data is proprietary and is not
-# baked into the image; this oneshot installs it from a licensed copy configured
-# in /etc/konica206/vendor-data.conf.
+# data (halftone screen + ICC profiles). Public images carry no proprietary
+# data; a local build may bake a licensed copy into /usr/share/konica206/vendor-data.
+# This oneshot restores it into /var/lib/konica206/vendor, or installs from the
+# licensed source configured in /etc/konica206/vendor-data.conf.
 #
 # The service is idempotent: if the runtime data is already present it exits 0
 # without touching anything, so it self-heals after an upgrade that wiped /var
@@ -56,6 +57,12 @@ case "$SRC" in
 esac
 
 if [[ ! -e $SRC ]]; then
+    # The default source is the copy baked into /usr by a local build. Public
+    # builds have no such directory; that is expected and must not fail boot.
+    if [[ $SRC == /usr/share/konica206/vendor-data ]]; then
+        log "no baked vendor data in the image; skipping"
+        exit 0
+    fi
     warn "vendor data source does not exist: $SRC"
     exit 1
 fi
