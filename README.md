@@ -19,6 +19,10 @@ A custom [Fedora bootc](https://bootc.dev/) image for an older x86_64 Intel PC
 - **fuzzel** launcher, `fuzzel-printjobs` (view/cancel/restart CUPS jobs),
   `weechat`, `mpv`, and a `konica-scan` desktop helper that frees the Konica USB
   interface before scanning
+- **system-config-printer** with its **print-job notification applet** — the
+  XFCE session autostarts the applet, so live CUPS job notifications appear in
+  the panel; from there or from the *Print Settings* GUI you can pause, resume,
+  cancel and restart jobs
 - NetworkManager, PipeWire/WirePlumber (GTK portals for file choosers and
   screen sharing), polkit, XWayland
 - The **Konica Minolta bizhub 206** PAPPL printer application
@@ -64,6 +68,11 @@ The installed machine tracks that reference and updates with `bootc upgrade`.
   `scripts/install-naps2-flatpak`, which also restores the Epson and Konica
   scan profiles from `flatpak/naps2/profiles.xml`. The Epson Printer Utility
   stays a vendored RPM because Epson only distributes it that way.
+- **Print jobs:** `system-config-printer` (the "Print Settings" GUI) and its
+  `system-config-printer-applet` are installed. XFCE autostarts the applet, so
+  live job notifications appear when prints are running, and the app/job
+  controls pause, resume, cancel and restart jobs. `fuzzel-printjobs` remains
+  as the keyboard launcher.
 - **Printers:** the Konica bizhub 206 PAPPL application, its native C11 encoder
   and legacy `konica206uri` proxy queues, plus the driverless Epson L3260
   network queue, are enabled and self-heal at boot. Licensed Konica runtime
@@ -462,6 +471,11 @@ internet (it pulls the image, roughly 3.3 GiB compressed, from GHCR).
 - **Networking:** NetworkManager is enabled. Use `nmcli device status` and
   `nmcli connection up <name>`; Wi-Fi needs `NetworkManager-wifi` +
   `wpa_supplicant`, both installed.
+- **Print jobs:** the `system-config-printer-applet` autostarts with the XFCE
+  session and shows live CUPS job notifications in the panel; click one (or
+  open *Print Settings* from the applications menu) to pause, resume, cancel
+  or restart a job. `fuzzel-printjobs` (and the `W-e` keybind) is the keyboard
+  shortcut.
 - **Printer:** `konica206-native.service` is enabled and restarts on failure;
   `konica206-queue.service` creates the CUPS queue when the printer is
   attached. Images built locally with `vendor-data/` already include the

@@ -34,6 +34,8 @@ application still uses libcups’ raster API and libusb, both from Fedora RPMs.
 | Wine/Adobe PS MIME rule | `/etc/cups/wineps.convs` |
 | Wine/Adobe PS guard | `/usr/local/sbin/check-wineps-route.sh` |
 | print-job manager | `/usr/local/bin/fuzzel-printjobs` (launcher + `W-e` keybind) |
+| print settings GUI | `/usr/bin/system-config-printer` ("Print Settings", opens on notification-area events) |
+| job notification applet | `/usr/bin/system-config-printer-applet` (autostarted by XFCE via `/etc/xdg/autostart/print-applet.desktop`) |
 | build commit stamps | `/usr/share/konica206/{app,native,retrofit}-commit` |
 
 The app runs as the system user `konica`, group `konica`, supplementary group

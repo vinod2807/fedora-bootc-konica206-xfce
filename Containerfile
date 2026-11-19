@@ -3,6 +3,8 @@
 # Fedora bootc image with:
 #   - Full XFCE desktop (X11) with LightDM GTK greeter autologin
 #   - fuzzel-printjobs desktop helper (CUPS job cancel/restart)
+#   - system-config-printer + notification applet (live CUPS job status and
+#     pause/resume/cancel/restart from the XFCE desktop)
 #   - Konica Minolta bizhub 206 PAPPL printer application
 #   - konica-native (C11) device-stream encoder
 #   - konica-retrofit CUPS integration assets (USB queue-presence watcher and
@@ -307,6 +309,8 @@ RUN set -eux; \
         sane-airscan \
         samba \
         samba-client \
+        system-config-printer \
+        system-config-printer-applet \
         usbutils \
         xorg-x11-server-Xwayland \
         zram-generator \
