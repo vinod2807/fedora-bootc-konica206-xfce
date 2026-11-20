@@ -148,7 +148,7 @@ jobs:
             test -x /usr/bin/system-config-printer
             test -x /usr/bin/system-config-printer-applet
             grep -qx "Exec=system-config-printer-applet" /etc/xdg/autostart/print-applet.desktop
-            ! grep -qE 'NotShowIn=.*(XFCE|Xfce)' /etc/xdg/autostart/print-applet.desktop
+            ! grep -qE "NotShowIn=.*(XFCE|Xfce)" /etc/xdg/autostart/print-applet.desktop
             desktop-file-validate /usr/share/applications/system-config-printer.desktop
             test -f /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
             for b in /usr/bin/konica206-native /usr/bin/konica-native /usr/bin/konica-send /usr/bin/startxfce4; do
