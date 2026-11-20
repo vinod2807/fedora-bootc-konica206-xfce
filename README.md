@@ -78,6 +78,9 @@ The installed machine tracks that reference and updates with `bootc upgrade`.
   network queue, are enabled and self-heal at boot. Licensed Konica runtime
   data can be baked into a **local** image via the git-ignored `vendor-data/`
   directory (so it is present from install); public builds never include it.
+- **Fonts:** Microsoft/Office fonts can be baked into a **local** image via the
+  git-ignored `fonts/` directory; they are proprietary, so public builds never
+  include them.
 - **Updates:** daily Flatpak update timers (system + user) and a stage-only
   bootc upgrade timer that never reboots on its own. Published images are
   rechunked with chunkah for smaller incremental downloads.
@@ -132,6 +135,7 @@ smbclient -L localhost -U vinod
 | `desktop/applications/` | Custom launchers: `konica-scan`, `fuzzel-printjobs`, `weechat`, `mpv` |
 | `cups/`, `ppd/`, `samba/` | CUPS filter rule, hand-written Konica PPDs, and the Samba share config |
 | `vendor-data/` (git-ignored, local only) | Drop your licensed 245igdi files here before a local build; the image then carries them from install time |
+| `fonts/` (git-ignored, local only) | Drop your licensed Microsoft/Office `.ttf`/`.ttc` files here before a local build; the image then carries them from install time |
 | `scripts/install-vendor-data` | Post-install installer for the licensed Konica runtime data |
 | `scripts/ensure-queue` | Creates the PAPPL queue and the local CUPS queue with the PPD shim |
 | `scripts/ensure-legacy-queue` | Creates the legacy `konica206uri` printer and its two CUPS proxy queues |
@@ -326,8 +330,33 @@ after a reset. `vendor-data/` is excluded by both `.gitignore` and the
 repository's licensing rules; never commit it or upload it as a public
 artifact.
 
-### Third-party apps (Flatpak)
+#### Baking the proprietary Office fonts into a local build
 
+The Microsoft Office / Windows fonts (Arial, Calibri, Times New Roman, the
+Wingdings families, …) are proprietary and **not redistributable**, so they are
+never committed and are never part of a published image. For a machine you
+build yourself, copy the `.ttf`/`.ttc` files into the git-ignored `fonts/`
+directory **before** building:
+
+```bash
+git clone https://github.com/vinod2807/office-fonts-binaries /tmp/office-fonts
+mkdir -p fonts
+cp /tmp/office-fonts/*.ttf /tmp/office-fonts/*.TTF /tmp/office-fonts/*.ttc fonts/
+podman build --pull=always --platform linux/amd64 \
+  -t localhost/fedora-bootc-konica206-xfce .
+```
+
+The build installs them system-wide in
+`/usr/local/share/fonts/office-fonts`, where fontconfig indexes them for every
+user and every Flatpak application. Only regular `.ttf`/`.ttc` files in the
+top level of `fonts/` are copied; the build fails if `fonts/` exists but
+contains no fonts, and it verifies that fontconfig registers them before the
+image is finished. Without `fonts/`, the step is a no-op. `fonts/` is excluded
+by `.gitignore`, so public CI has no such directory and publishes no
+proprietary font; do not push an image built with `fonts/` to a public
+registry.
+
+### Third-party apps (Flatpak)
 Third-party desktop apps are installed as Flatpaks on the **installed machine**,
 not baked into the image. Flatpak's system state lives under `/var/lib/flatpak`,
 which bootc excludes from the image (it behaves like a Docker `VOLUME` and is
@@ -885,6 +914,9 @@ second legacy Konica queue against the same device.
   bake licensed files in from the git-ignored `vendor-data/` directory; those
   files stay on the builder's machine and are never committed or published.
 - Vendor PPD: **not** redistributed; not required.
+- Office fonts: **not** redistributed. A local build may bake licensed
+  Microsoft/Office fonts in from the git-ignored `fonts/` directory; those
+  files stay on the builder's machine and are never committed or published.
 - No vendor files are committed, and none are uploaded as public artifacts.
 - The image license metadata is `NOASSERTION`; review the upstream licenses
   before redistributing the image further.

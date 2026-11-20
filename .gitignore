@@ -17,4 +17,9 @@ vendor-data/
 *.icm
 *.hft
 
+# Proprietary Microsoft/Office fonts: never commit.
+# For a local build, copy your licensed .ttf/.ttc files into fonts/ before
+# building; the Containerfile reads them into the image, but git never will.
+fonts/
+
 .DS_Store

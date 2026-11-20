@@ -17,3 +17,7 @@ vendor
 # these rules never let proprietary files into a published image.
 !vendor-data
 !vendor-data/**
+
+# fonts/ is the other deliberate exception: proprietary Microsoft/Office fonts
+# supplied by a local builder. It is git-ignored, so public CI has no such
+# directory and never bakes them into a published image.

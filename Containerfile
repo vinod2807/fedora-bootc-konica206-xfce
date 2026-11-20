@@ -216,6 +216,31 @@ RUN set -eux; \
 COPY . /tmp/ctx
 RUN set -eux;     r=/out/final-root;     rm -rf "$r";     install -d "$r";     cp -a /out/retrofit-root/. "$r"/;     mkdir -p "$r"/usr;     cp -a /out/usr/. "$r"/usr/;     install -D -m 0644 /tmp/ctx/bootc/90-linux-pc-crash-fixes.toml "$r"/usr/lib/bootc/kargs.d/90-linux-pc-crash-fixes.toml;     install -D -m 0644 /tmp/ctx/modprobe.d/90-linux-pc-crash-fixes.conf "$r"/etc/modprobe.d/90-linux-pc-crash-fixes.conf;     install -D -m 0644 /tmp/ctx/modprobe.d/90-konica206-usblp.conf "$r"/etc/modprobe.d/90-konica206-usblp.conf;     install -D -m 0644 /tmp/ctx/systemd/konica206-native.service "$r"/usr/lib/systemd/system/konica206-native.service;     install -D -m 0644 /tmp/ctx/systemd/konica206-queue.service "$r"/usr/lib/systemd/system/konica206-queue.service;     install -D -m 0644 /tmp/ctx/systemd/epson-l3260-queue.service "$r"/usr/lib/systemd/system/epson-l3260-queue.service;     install -D -m 0644 /tmp/ctx/systemd/konica206-classic-queue.service "$r"/usr/lib/systemd/system/konica206-classic-queue.service;     install -D -m 0644 /tmp/ctx/systemd/samba-setup.service "$r"/usr/lib/systemd/system/samba-setup.service;     install -D -m 0644 /tmp/ctx/systemd/nmb.service.d/10-wait-for-interface.conf "$r"/usr/lib/systemd/system/nmb.service.d/10-wait-for-interface.conf;     install -D -m 0644 /tmp/ctx/systemd/bootc-upgrade.service "$r"/usr/lib/systemd/system/bootc-upgrade.service;     install -D -m 0644 /tmp/ctx/systemd/bootc-upgrade.timer "$r"/usr/lib/systemd/system/bootc-upgrade.timer;     install -D -m 0644 /tmp/ctx/systemd/flatpak-update.service "$r"/usr/lib/systemd/system/flatpak-update.service;     install -D -m 0644 /tmp/ctx/systemd/flatpak-update.timer "$r"/usr/lib/systemd/system/flatpak-update.timer;     install -D -m 0644 /tmp/ctx/systemd/user/flatpak-update.service "$r"/usr/lib/systemd/user/flatpak-update.service;     install -D -m 0644 /tmp/ctx/systemd/user/flatpak-update.timer "$r"/usr/lib/systemd/user/flatpak-update.timer;     install -D -m 0644 /tmp/ctx/systemd/zram-generator.conf "$r"/etc/systemd/zram-generator.conf;     install -D -m 0644 /tmp/ctx/systemd/zram-setup-no-fail-on-stop.conf "$r"/usr/lib/systemd/system/systemd-zram-setup@zram0.service.d/10-no-fail-on-stop.conf;     install -D -m 0644 /tmp/ctx/udev/70-konica206.rules "$r"/usr/lib/udev/rules.d/70-konica206.rules;     for f in /tmp/ctx/desktop/applications/*.desktop; do install -D -m 0644 "$f" "$r"/usr/share/applications/"$(basename "$f")"; done;     install -D -m 0755 /tmp/ctx/scripts/fuzzel-printjobs "$r"/usr/local/bin/fuzzel-printjobs;     install -D -m 0755 /tmp/ctx/scripts/konica-scan "$r"/usr/local/bin/konica-scan;     install -D -m 0755 /tmp/ctx/scripts/install-vendor-data "$r"/usr/libexec/konica206/install-vendor-data;     install -D -m 0755 /tmp/ctx/scripts/ensure-queue "$r"/usr/libexec/konica206/ensure-queue;     install -D -m 0755 /tmp/ctx/scripts/preflight "$r"/usr/libexec/konica206/preflight;     install -D -m 0755 /tmp/ctx/scripts/ensure-epson-queue "$r"/usr/libexec/epson-l3260/ensure-queue;     install -D -m 0755 /tmp/ctx/scripts/ensure-classic-queue "$r"/usr/libexec/konica206/ensure-classic-queue;     install -D -m 0755 /tmp/ctx/scripts/setup-samba "$r"/usr/libexec/setup-samba;     install -D -m 0644 /tmp/ctx/samba/smb.conf "$r"/etc/samba/smb.conf;     install -D -m 0644 /tmp/ctx/flatpak/overrides/com.stremio.Stremio "$r"/etc/flatpak/overrides/com.stremio.Stremio;     install -D -m 0644 /tmp/ctx/ppd/konica206.ppd "$r"/usr/share/ppd/konica206/konica206.ppd; install -D -m 0644 /tmp/ctx/ppd/konica206-classic.ppd "$r"/usr/share/ppd/konica206/konica206-classic.ppd; { cat /tmp/ctx/ppd/konica206.ppd; printf '\n*cupsFilter2: "application/pdf image/urf 5 /usr/libexec/konica206/pdf-duplex-shim"\n'; } > "$r"/usr/share/ppd/konica206/konica206-app.ppd; grep -qxF '*cupsFilter2: "application/pdf image/urf 5 /usr/libexec/konica206/pdf-duplex-shim"' "$r"/usr/share/ppd/konica206/konica206-app.ppd; install -D -m 0755 /tmp/ctx/scripts/pdf-duplex-shim "$r"/usr/libexec/konica206/pdf-duplex-shim; install -D -m 0755 /tmp/ctx/scripts/konica-vendor-data-boot "$r"/usr/libexec/konica206/install-vendor-data-onboot; install -D -m 0644 /tmp/ctx/systemd/konica206-vendor-data.service "$r"/usr/lib/systemd/system/konica206-vendor-data.service; install -D -m 0644 /tmp/ctx/systemd/konica206-vendor-data.conf "$r"/etc/konica206/vendor-data.conf; test -d "$r"/usr/share/konica206
 
+# Microsoft Office / Windows fonts are proprietary and are never committed to
+# this repository. A local build can opt in by dropping the .ttf/.ttc files
+# from the office-fonts-binaries repository into the git-ignored fonts/
+# directory before building; public CI has no fonts/ and installs nothing.
+#
+# Fonts go to /usr/local/share/fonts (the Red Hat location for locally managed
+# fonts, not package-owned /usr/share/fonts), where fontconfig scans them for
+# every user and every Flatpak application. Collections (.ttc) are installed
+# alongside single-face files (.ttf/.TTF).
+RUN set -eux; \
+    r=/out/final-root; \
+    src=/tmp/ctx/fonts; \
+    if [ -d "$src" ]; then \
+        dest="$r/usr/local/share/fonts/office-fonts"; \
+        install -d -m 0755 "$dest"; \
+        find "$src" -maxdepth 1 -type f \
+                \( -iname '*.ttf' -o -iname '*.ttc' \) \
+            -exec install -m 0644 -t "$dest" {} +; \
+        count=$(find "$dest" -maxdepth 1 -type f | wc -l); \
+        test "$count" -gt 0; \
+        echo "Baked $count Office fonts into $dest"; \
+    else \
+        echo "No local fonts/ directory; proprietary Office fonts not installed"; \
+    fi
+
 # Licensed Konica 245igdi runtime data is proprietary and is never committed to
 # this repository. A local build can opt in by dropping the licensed files into
 # vendor-data/ before building (git ignores it). Any layout accepted by
@@ -508,6 +533,16 @@ RUN set -eux; \
         > /etc/gtk-3.0/settings.ini; \
     chmod 0644 /etc/gtk-3.0/settings.ini; \
     dconf update; \
+    # Proprietary Office fonts are only present when the local build supplied
+    # fonts/ (never in a published image). Build the fontconfig cache now and
+    # fail the build if fontconfig cannot see them, so a broken font set is
+    # caught at build time rather than after deployment.
+    if [ -d /usr/local/share/fonts/office-fonts ]; then \
+        fc-cache -f /usr/local/share/fonts/office-fonts >/dev/null; \
+        n=$(fc-list : file | grep -cF '/usr/local/share/fonts/office-fonts/'); \
+        test "$n" -gt 0; \
+        echo "office-fonts: $n faces registered with fontconfig"; \
+    fi; \
     ln -sf /usr/libexec/konica206/install-vendor-data /usr/bin/konica206-install-vendor-data; \
     ln -sf /usr/libexec/konica206/preflight /usr/bin/konica206-preflight; \
     install -d -m 0755 /usr/share/konica206
