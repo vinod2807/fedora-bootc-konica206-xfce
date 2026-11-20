@@ -221,15 +221,16 @@ RUN set -eux;     r=/out/final-root;     rm -rf "$r";     install -d "$r";     c
 # from the office-fonts-binaries repository into the git-ignored fonts/
 # directory before building; public CI has no fonts/ and installs nothing.
 #
-# Fonts go to /usr/local/share/fonts (the Red Hat location for locally managed
-# fonts, not package-owned /usr/share/fonts), where fontconfig scans them for
-# every user and every Flatpak application. Collections (.ttc) are installed
-# alongside single-face files (.ttf/.TTF).
+# Fonts go to /usr/share/fonts/office-fonts. This is important for Flatpak:
+# Flatpak remaps the host's /usr/share/fonts into the sandbox as /run/host/fonts,
+# but does not expose /usr/local/share/fonts, so fonts installed there would be
+# invisible to Flatpak apps such as LibreOffice. Collections (.ttc) are
+# installed alongside single-face files (.ttf/.TTF).
 RUN set -eux; \
     r=/out/final-root; \
     src=/tmp/ctx/fonts; \
     if [ -d "$src" ]; then \
-        dest="$r/usr/local/share/fonts/office-fonts"; \
+        dest="$r/usr/share/fonts/office-fonts"; \
         install -d -m 0755 "$dest"; \
         find "$src" -maxdepth 1 -type f \
                 \( -iname '*.ttf' -o -iname '*.ttc' \) \
@@ -537,9 +538,9 @@ RUN set -eux; \
     # fonts/ (never in a published image). Build the fontconfig cache now and
     # fail the build if fontconfig cannot see them, so a broken font set is
     # caught at build time rather than after deployment.
-    if [ -d /usr/local/share/fonts/office-fonts ]; then \
-        fc-cache -f /usr/local/share/fonts/office-fonts >/dev/null; \
-        n=$(fc-list : file | grep -cF '/usr/local/share/fonts/office-fonts/'); \
+    if [ -d /usr/share/fonts/office-fonts ]; then \
+        fc-cache -f /usr/share/fonts/office-fonts >/dev/null; \
+        n=$(fc-list : file | grep -cF '/usr/share/fonts/office-fonts/'); \
         test "$n" -gt 0; \
         echo "office-fonts: $n faces registered with fontconfig"; \
     fi; \

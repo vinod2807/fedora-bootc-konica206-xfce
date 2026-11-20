@@ -347,8 +347,11 @@ podman build --pull=always --platform linux/amd64 \
 ```
 
 The build installs them system-wide in
-`/usr/local/share/fonts/office-fonts`, where fontconfig indexes them for every
-user and every Flatpak application. Only regular `.ttf`/`.ttc` files in the
+`/usr/share/fonts/office-fonts`, where fontconfig indexes them for every user.
+Flatpak applications see them too: Flatpak remaps the host's `/usr/share/fonts`
+into the sandbox as `/run/host/fonts` (it does not expose
+`/usr/local/share/fonts`, which is why that location cannot be used here).
+Only regular `.ttf`/`.ttc` files in the
 top level of `fonts/` are copied; the build fails if `fonts/` exists but
 contains no fonts, and it verifies that fontconfig registers them before the
 image is finished. Without `fonts/`, the step is a no-op. `fonts/` is excluded
