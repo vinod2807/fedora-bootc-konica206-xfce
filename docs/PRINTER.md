@@ -34,8 +34,6 @@ application still uses libcups’ raster API and libusb, both from Fedora RPMs.
 | Wine/Adobe PS MIME rule | `/etc/cups/wineps.convs` |
 | Wine/Adobe PS guard | `/usr/local/sbin/check-wineps-route.sh` |
 | print-job manager | `/usr/local/bin/fuzzel-printjobs` (launcher + `W-e` keybind) |
-| print settings GUI | `/usr/bin/system-config-printer` ("Print Settings", opens on notification-area events) |
-| job notification applet | `/usr/bin/system-config-printer-applet` (autostarted by XFCE via `/etc/xdg/autostart/print-applet.desktop`) |
 | build commit stamps | `/usr/share/konica206/{app,native,retrofit}-commit` |
 
 The app runs as the system user `konica`, group `konica`, supplementary group
@@ -140,6 +138,25 @@ The native application and the legacy `konica206uri` application both use USB
 interface 1, but only when printing: each opens the device per job, so one job
 at a time drives the printer. Do not run both queues concurrently in a way
 that interleaves jobs on the same physical sheet stack.
+
+## Duplex back sides
+
+Back-side rotation is path-specific and must not be unified:
+
+- CUPS (`konica206`, raster path) and the legacy queues need PPDs with
+  `*cupsBackSide: Rotated`. The `konica206-app.ppd` shim also appends `sides=`
+  for PPD-only clients (`Duplex=DuplexNoTumble`); without that shim their back
+  page is not rotated and prints upside down. `ensure-queue` queries PAPPL over
+  IPP (`CUPS-Get-Printers`) so the PPD really gets refreshed on USB events —
+  PAPPL 1.4.x ignores `-u` for `printers` and starts a second server instead.
+- The app's builtin PDF renderer reads `KONICA_PPD`. Since the encoder switched
+  to `konica-native`, the 206's duplexer binds long edge by itself, so the app
+  must not pre-rotate backs. Its PPD is therefore a derived
+  `*cupsBackSide: Normal` copy at
+  `/usr/share/konica206/ppd/KonicaMinolta-206-native-normal.ppd`. A Rotated app
+  PPD prints long-edge backs upside down; this was proven by the 2026-11-13
+  A/B test, reproduced again on 2026-11-22, and fixed by re-applying upstream
+  konica206-native-alpine commit `30c0739`.
 
 ## Legacy konica206uri stack
 
@@ -264,20 +281,11 @@ The upstream `vendor/NOTICE` says these remain Konica Minolta property and are
 not covered by the repository license. Redistributing them requires the
 vendor’s permission. Therefore:
 
-- this repository and its public CI build contain no vendor files;
+- this repository contains no vendor files;
 - the container build copies only compiled binaries from the builder stage, not
   `vendor/`;
 - public images and public ISO artifacts contain no vendor files;
-- a **local** build can opt in by placing your licensed files in the git-ignored
-  `vendor-data/` directory before `podman build` (the same layouts are accepted
-  below). The build bakes them into `/var/lib/konica206/vendor`, so they are
-  present as soon as the image is installed, and into
-  `/usr/share/konica206/vendor-data` as an immutable source the first-boot
-  oneshot restores from if `/var` is ever reset. A malformed `vendor-data/`
-  fails the build with a clear error instead of silently producing an image
-  that cannot print.
-
-On an installed machine you can still supply or replace the data at any time:
+- you supply the files after installation from your own licensed driver copy.
 
 ```bash
 sudo konica206-install-vendor-data /path/to/driver-copy
